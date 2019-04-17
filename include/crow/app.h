@@ -91,6 +91,12 @@ namespace crow
             return *this;
         }
 
+        self_t& keep_alive_tick(std::chrono::seconds keep_alive_tick)
+        {
+            keep_alive_tick_ = keep_alive_tick;
+            return *this;
+        }
+
         void validate()
         {
             router_.validate();
@@ -109,7 +115,7 @@ namespace crow
 #ifdef CROW_ENABLE_SSL
             if (use_ssl_)
             {
-                ssl_server_ = std::move(std::unique_ptr<ssl_server_t>(new ssl_server_t(this, bindaddr_, port_, &middlewares_, concurrency_, &ssl_context_)));
+                ssl_server_ = std::move(std::unique_ptr<ssl_server_t>(new ssl_server_t(this, bindaddr_, port_, keep_alive_tick_, &middlewares_, concurrency_, &ssl_context_)));
                 ssl_server_->set_tick_function(tick_interval_, tick_function_);
                 notify_server_start();
                 ssl_server_->run();
@@ -117,7 +123,7 @@ namespace crow
             else
 #endif
             {
-                server_ = std::move(std::unique_ptr<server_t>(new server_t(this, bindaddr_, port_, &middlewares_, concurrency_, nullptr)));
+                server_ = std::move(std::unique_ptr<server_t>(new server_t(this, bindaddr_, port_, keep_alive_tick_, &middlewares_, concurrency_, nullptr)));
                 server_->set_tick_function(tick_interval_, tick_function_);
                 notify_server_start();
                 server_->run();
@@ -250,6 +256,7 @@ namespace crow
         std::string bindaddr_ = "0.0.0.0";
         Router router_;
 
+        std::chrono::seconds keep_alive_tick_{5};
         std::chrono::milliseconds tick_interval_;
         std::function<void()> tick_function_;
 

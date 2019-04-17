@@ -48,7 +48,7 @@ namespace crow
                 while(!dq_.empty())
                 {
                     auto& x = dq_.front();
-                    if (now - x.first < std::chrono::seconds(tick))
+                    if (now - x.first < tick)
                         break;
                     if (x.second)
                     {
@@ -66,13 +66,13 @@ namespace crow
                 io_service_ = &io_service;
             }
 
-            dumb_timer_queue() noexcept
+            dumb_timer_queue(std::chrono::seconds tick) noexcept : tick(std::move(tick))
             {
             }
 
         private:
 
-            int tick{5};
+            std::chrono::seconds tick;
             boost::asio::io_service* io_service_{};
             std::deque<std::pair<decltype(std::chrono::steady_clock::now()), std::function<void()>>> dq_;
             int step_{};

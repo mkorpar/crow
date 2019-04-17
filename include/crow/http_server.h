@@ -26,7 +26,7 @@ namespace crow
     class Server
     {
     public:
-    Server(Handler* handler, std::string bindaddr, uint16_t port, std::tuple<Middlewares...>* middlewares = nullptr, uint16_t concurrency = 1, typename Adaptor::context* adaptor_ctx = nullptr)
+    Server(Handler* handler, std::string bindaddr, uint16_t port, std::chrono::seconds keep_alive_tick, std::tuple<Middlewares...>* middlewares = nullptr, uint16_t concurrency = 1, typename Adaptor::context* adaptor_ctx = nullptr)
             : acceptor_(io_service_, tcp::endpoint(boost::asio::ip::address::from_string(bindaddr), port)),
             signals_(io_service_, SIGINT, SIGTERM),
             tick_timer_(io_service_),
@@ -34,6 +34,7 @@ namespace crow
             concurrency_(concurrency),
             port_(port),
             bindaddr_(bindaddr),
+            keep_alive_tick_(std::move(keep_alive_tick)),
             middlewares_(middlewares),
             adaptor_ctx_(adaptor_ctx)
         {
@@ -103,7 +104,7 @@ namespace crow
                             };
 
                             // initializing timer queue
-                            detail::dumb_timer_queue timer_queue;
+                            detail::dumb_timer_queue timer_queue{keep_alive_tick_};
                             timer_queue_pool_[i] = &timer_queue;
 
                             timer_queue.set_io_service(*io_service_pool_[i]);
@@ -226,6 +227,7 @@ namespace crow
         std::string bindaddr_;
         unsigned int roundrobin_index_{};
 
+        std::chrono::seconds keep_alive_tick_;
         std::chrono::milliseconds tick_interval_;
         std::function<void()> tick_function_;
 
